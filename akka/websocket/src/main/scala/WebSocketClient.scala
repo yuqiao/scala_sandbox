@@ -8,6 +8,7 @@ class WebSocketClient( val strUrl:String ) extends Actor {
   val uri = new  URI( strUrl )
   var respondTo:  ActorRef  = _
   var handle: SocketHandle  = _
+  var handshakeOk = false
 
   override def preStart() {
       respondTo =  context.system.actorOf( Props[RespondTo] )  
@@ -15,7 +16,14 @@ class WebSocketClient( val strUrl:String ) extends Actor {
   }
   
   def receive = {
-    case Read(socket, bytes ) => respondTo ! bytes 
+    case Read(socket, bytes ) =>
+      if( handshakeOk ) {
+        respondTo ! bytes 
+      }else{
+        //TODO: check handshake 
+        handshakeOk = true
+        println(  "handshake result: \n" + bytes.utf8String )
+      }
 
     case Closed(socket, cause ) => handle = null
 
@@ -23,13 +31,17 @@ class WebSocketClient( val strUrl:String ) extends Actor {
       println( "Connected!" ) 
       handle.write( handshakeFrame( uri.getHost, uri.getPort, uri.getPath ) )
     
-    case s:String => println("send: " + s ); handle.write ( ByteString(s ) ++  ByteString("\r\n") ) 
+    case s:String => 
+      println("send: " + s ); 
+      val frame = WebSocketFrame( s ) 
+      handle.write ( frame.format ) 
   }
 }
 
 case class RespondTo extends Actor {
   def receive = {
-    case bytes: ByteString => println( "recv: " + bytes.utf8String  )
+    case WebSocketFrame( opcode, data ) => println( "recv1: " + data )
+    case bytes: ByteString => println( "recv2: " + bytes  )
   }
 }
  
