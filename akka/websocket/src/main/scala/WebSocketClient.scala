@@ -21,7 +21,6 @@ class WebSocketClient( val strUrl:String ) extends Actor {
 
     case Connected(h, _ ) => 
       println( "Connected!" ) 
-      handle=h 
       handle.write( handshakeFrame( uri.getHost, uri.getPort, uri.getPath ) )
     
     case s:String => println("send: " + s ); handle.write ( ByteString(s ) ++  ByteString("\r\n") ) 

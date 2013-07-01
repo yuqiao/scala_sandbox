@@ -16,3 +16,17 @@ object WebSocketFrame {
   }
 
 }
+
+case class WebSocketFrame(
+  data: String,
+  opcode: Byte = 1,
+  fin: Boolean = 1,
+  mask: Boolean = 1
+)  {
+  def format():ByteString {
+    val head1 = ByteString(  ( if( fin) 1 else 0  ) << 7 | opcode )  
+    val head2 = ByteString(  ( if( mask) 1 else 0 ) << 7  | data.length ) 
+    head1 ++ head2
+  }
+}
+
