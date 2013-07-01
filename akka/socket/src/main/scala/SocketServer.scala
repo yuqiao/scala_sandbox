@@ -1,13 +1,12 @@
 import java.net._
 import akka.actor._
 import akka.util.{Timeout, ByteString, ByteStringBuilder}
-import akka.dispatch.Promise
 
 object SocketConstants {
   val EOL = ByteString("\r\n")
 }
 
-class SocketServer(address: InetSocketAddress = new InetSocketAddress("localhost", 0), addressPromise: Promise[SocketAddress]) extends Actor {               
+class SocketServer(address: InetSocketAddress = new InetSocketAddress("localhost", 0) ) extends Actor {               
  
   import SocketConstants._
 
@@ -24,7 +23,7 @@ class SocketServer(address: InetSocketAddress = new InetSocketAddress("localhost
       postStop()
  
     case IO.Listening(server, address) =>
-      addressPromise.success(address)
+      println( "listen sucess. address="+ address ) 
  
     case IO.NewClient(server) =>
       val socket = server.accept()
@@ -34,7 +33,7 @@ class SocketServer(address: InetSocketAddress = new InetSocketAddress("localhost
     case IO.Read(socket, bytes) => state(socket)(IO.Chunk(bytes))
  
     case IO.Closed(socket, cause) =>
-      state(socket)(IO.EOF(None))
+      state(socket)(IO.EOF)
       state -= socket
   }
 }
