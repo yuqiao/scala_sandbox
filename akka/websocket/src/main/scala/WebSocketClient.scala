@@ -3,20 +3,16 @@ import java.net.{InetSocketAddress, SocketAddress, URI}
 import akka.util.{ ByteString, ByteStringBuilder }
 
 class WebSocketClient( val strUrl:String ) extends Actor {
-  import IO._
   import WebSocketFrame._
   val uri = new  URI( strUrl )
-  var respondTo:  ActorRef  = _
-  var handle: SocketHandle  = _
+  var respondTo  = context.system.actorOf( Props[RespondTo] )   
+  var handle =  IOManager( context.system ).connect( new InetSocketAddress( uri.getHost, uri.getPort ) )  
   var handshakeOk = false
 
-  override def preStart() {
-      respondTo =  context.system.actorOf( Props[RespondTo] )  
-      handle = IOManager( context.system ).connect( new InetSocketAddress( uri.getHost, uri.getPort ) )  
-  }
+  //override def preStart() {  }
   
   def receive = {
-    case Read(socket, bytes ) =>
+    case IO.Read(socket, bytes ) =>
       if( handshakeOk ) {
         respondTo ! bytes 
       }else{
@@ -25,9 +21,9 @@ class WebSocketClient( val strUrl:String ) extends Actor {
         println(  "handshake result: \n" + bytes.utf8String )
       }
 
-    case Closed(socket, cause ) => handle = null
+    case IO.Closed(socket, cause ) => handle = null
 
-    case Connected(h, _ ) => 
+    case IO.Connected(h, _ ) => 
       println( "Connected!" ) 
       handle.write( handshakeFrame( uri.getHost, uri.getPort, uri.getPath ) )
     
